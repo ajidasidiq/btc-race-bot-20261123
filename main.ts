@@ -37,7 +37,6 @@ const STOP_COOLDOWN_BARS = 30; // bars to wait before re-entering after a stop e
 const SYMBOL = 'CBBTC';
 
 let priceScale = 5;
-let qtyScale = 8;
 
 // Bars already seen, NOT including the bar being answered.
 const prevCloses: number[] = [];
@@ -80,7 +79,6 @@ await runBars({
     const sym = state.symbols.get(SYMBOL);
     if (sym) {
       priceScale = sym.price_scale;
-      qtyScale = sym.qty_scale;
     }
   },
 

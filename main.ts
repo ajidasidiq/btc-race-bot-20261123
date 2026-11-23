@@ -30,6 +30,7 @@ const EMA_PERIOD = 720; // 12h trend filter
 const MA_GATE_BPS = 9950; // dip buy only above 99.50% of the 12h EMA
 const MAX_SLIPPAGE_BPS = 150; // cap what a fill may move from the last close
 const NO_ENTRY_AFTER_BARS = 1430; // don't open a position in the final bars
+const STOP_COOLDOWN_BARS = 30; // bars to wait before re-entering after a stop exit
 
 const SYMBOL = 'CBBTC';
 
@@ -52,6 +53,7 @@ let peakSinceEntry = 0; // highest close since entry, USDC
 let pendingOrderId: string | null = null;
 let pendingKind: EntryKind | null = null;
 let scoredBars = 0; // bars in the scored window (after any warm-up)
+let coolUntilBar = -1; // no new entry before this scored-bar index (after a stop)
 
 function toUsd(raw: string): number {
   return Number(raw) / 10 ** priceScale;
@@ -137,6 +139,9 @@ await runBars({
         rollHigh !== -Infinity &&
         close >= rollHigh * (1 - TOP_OFF_BPS / 10000);
       if (stopHit || trailHit || topHit) {
+        // A stop exit means the move went against us: stay out for a while
+        // instead of buying the next dip of the same fall.
+        if (stopHit || trailHit) coolUntilBar = scoredBars + STOP_COOLDOWN_BARS;
         orders = [
           {
             side: 'sell',
@@ -150,7 +155,8 @@ await runBars({
       !holding &&
       !state.warmingUp &&
       prevCloses.length >= MIN_HISTORY &&
-      scoredBars < NO_ENTRY_AFTER_BARS
+      scoredBars < NO_ENTRY_AFTER_BARS &&
+      scoredBars >= coolUntilBar
     ) {
       // --- entries (rolling range uses bars before this one) ---
       const rollLow = rollingLow();

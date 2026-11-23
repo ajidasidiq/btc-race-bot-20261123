@@ -10,7 +10,9 @@
 //      (a genuine range break, not noise), ridden with a trailing stop.
 // Every position carries a hard 1% stop below its fill and a 1.5% trailing
 // stop below its peak, so a crash costs at most ~1.5% and a slow bleed is
-// exited on the stop, while chop is left alone: no trade, no fee.
+// exited on the stop. After a stop exit the bot waits 30 bars before
+// re-entering, instead of buying the next dip of the same fall. Chop is
+// left alone: no trade, no fee.
 //
 // Everything is deterministic: no clock, no randomness, no environment reads.
 // Decisions use only the bars the harness has already sent.
